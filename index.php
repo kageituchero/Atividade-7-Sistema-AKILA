@@ -1,26 +1,21 @@
+<?php
+include '../php/db.php';
+?>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Padaria Bumba meu Pão</title>
-<link rel="stylesheet" type="text/css" href="style/style.css">
+<title>Gerenciamento de Jogadores</title>
+<link rel="stylesheet" type="text/css" href="../style/style.css">
 </head>
 <body>
 
-
-
 <div class="container">
-    <h1>🍞 Padaria Bumba meu Pão 🍞</h1>
-    <p>Bem-vindo ao sistema de gerenciamento.</p>
-
-    <a class="btn" href="php/create.php">Cadastrar Produto</a>
-    <a class="btn" href="php/read.php">Ver Produtos</a>
-
-    <br>
-    <br>
-    <br>
-
-        <img src="img/bumba meu pão.png" alt="padareira">
-
+    <h1>⚽ Gerenciamento de Jogadores</h1>
+    
+    <a class="btn" href="../php/jogadores/create.php">Cadastrar Jogador</a>
+    <a class="btn" href="read.php">Listar Jogadores</a>
+    <a class="btn" href="../index.php">Voltar ao Início</a>
 </div>
 
 </body>
