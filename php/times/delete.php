@@ -1,34 +1,93 @@
 <?php
-include 'db.php';
-$msg = "";
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db = "db.php";
 
-if (isset($_GET['id'])) {
-    $id = $_GET['id'];
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+    die("Falha na conexão: " . $conn->connect_error);
+}
 
-    $sql = "DELETE FROM produtos WHERE id_produto=$id";
-    if ($conn->query($sql) === TRUE) {
-        $msg = "Produto excluído com sucesso!";
-    } else {
-        $msg = "Erro ao excluir produto: " . $conn->error;
+$id = intval($_GET["id"] ?? 0);
+$erro = "";
+$sucesso = "";
+
+// Buscar informações do time para confirmação
+$nome_time = "";
+if ($id > 0) {
+    $stmt = $conn->prepare("SELECT nome FROM times WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->bind_result($nome_time);
+    $stmt->fetch();
+    $stmt->close();
+    if (!$nome_time) {
+        $erro = "Time não encontrado.";
     }
 } else {
-    $msg = "ID do produto não fornecido.";
+    $erro = "ID inválido.";
+}
+
+// Verificar dependências antes de excluir
+$tem_dependencias = false;
+if (!$erro && $_SERVER["REQUEST_METHOD"] === "POST") {
+    // Verifica jogadores vinculados
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM jogadores WHERE time_id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->bind_result($qtd_jogadores);
+    $stmt->fetch();
+    $stmt->close();
+
+    // Verifica partidas vinculadas (mandante ou visitante)
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM partidas WHERE mandante_id = ? OR visitante_id = ?");
+    $stmt->bind_param("ii", $id, $id);
+    $stmt->execute();
+    $stmt->bind_result($qtd_partidas);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($qtd_jogadores > 0 || $qtd_partidas > 0) {
+        $tem_dependencias = true;
+        $erro = "Não é possível excluir: o time possui jogadores ou partidas vinculados.";
+    } else {
+        // Realiza a exclusão
+        $stmt = $conn->prepare("DELETE FROM times WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            $sucesso = "Time excluído com sucesso!";
+            $nome_time = "";
+        } else {
+            $erro = "Erro ao excluir time.";
+        }
+        $stmt->close();
+    }
 }
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Excluir Produto</title>
-<link rel="stylesheet" type="text/css" href="../style/style.css">
+    <meta charset="UTF-8">
+    <title>Excluir Time</title>
 </head>
 <body>
+    <h1>Excluir Time</h1>
+    <?php if ($erro): ?>
+        <p style="color:red"><?= $erro ?></p>
+    <?php elseif ($sucesso): ?>
+        <p style="color:green"><?= $sucesso ?></p>
+    <?php elseif ($nome_time): ?>
+        <p>Tem certeza que deseja excluir o time <strong><?= htmlspecialchars($nome_time) ?></strong>?</p>
+        <form method="post">
+            <button type="submit">Confirmar exclusão</button>
+            <a href="read.php">Cancelar</a>
+        </form>
+    <?php endif; ?>
 
-<div class="container">
-    <h1>Excluir Produto</h1>
-    <?php if($msg) echo "<p class='" . (strpos($msg, "Erro") !== false ? "error-message" : "message") . "'>$msg</p>"; ?>
-    <a class="btn" href="../index.php">Voltar</a>
-</div>
-
+    <?php if (!$nome_time): ?>
+        <a href="read.php">Voltar à lista</a>
+    <?php endif; ?>
 </body>
 </html>
