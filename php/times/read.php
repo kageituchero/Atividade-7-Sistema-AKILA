@@ -1,56 +1,98 @@
 <?php
-include 'db.php';
+// Conexão com o banco de dados
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db = "db.php";
+
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+    die("Falha na conexão: " . $conn->connect_error);
+}
+
+// Parâmetros de filtro e paginação
+$nome = trim($_GET["nome"] ?? "");
+$page = max(1, intval($_GET["page"] ?? 1));
+$perPage = 5;
+$offset = ($page - 1) * $perPage;
+
+// Monta a query de busca com filtro
+$where = "";
+$params = [];
+$types = "";
+
+if ($nome !== "") {
+    $where = "WHERE nome LIKE ?";
+    $params[] = "%$nome%";
+    $types .= "s";
+}
+
+// Conta total de registros para paginação
+$sqlCount = "SELECT COUNT(*) FROM times $where";
+$stmtCount = $conn->prepare($sqlCount);
+if ($where !== "") $stmtCount->bind_param($types, ...$params);
+$stmtCount->execute();
+$stmtCount->bind_result($total);
+$stmtCount->fetch();
+$stmtCount->close();
+
+// Busca os registros da página atual
+$sql = "SELECT id, nome FROM times $where ORDER BY nome LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($sql);
+
+if ($where !== "") {
+    $typesPage = $types . "ii";
+    $paramsPage = [...$params, $perPage, $offset];
+    $stmt->bind_param($typesPage, ...$paramsPage);
+} else {
+    $stmt->bind_param("ii", $perPage, $offset);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+
+$totalPages = max(1, ceil($total / $perPage));
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Ver Produtos</title>
-<link rel="stylesheet" type="text/css" href="../style/style.css">
+    <meta charset="UTF-8">
+    <title>Listar Times</title>
 </head>
 <body>
+    <h1>Listar Times</h1>
 
-<div class="container">
-    <h1>Produtos Cadastrados</h1>
-    <?php
-    $sql = "SELECT * FROM produtos";
-    $result = $conn->query($sql);
+    <form method="get">
+        <input type="text" name="nome" placeholder="Filtrar por nome" value="<?= htmlspecialchars($nome) ?>">
+        <button type="submit">Filtrar</button>
+    </form>
+    <br>
 
-    if ($result->num_rows > 0) {
-        echo "<table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>Descrição</th>
-                        <th>Preço</th>
-                        <th>Qtd Estoque</th>
-                        <th>ID Usuário</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>";
-        while ($row = $result->fetch_assoc()) {
-            echo "<tr>
-                    <td>{$row['id_produto']}</td>
-                    <td>{$row['nome']}</td>
-                    <td>{$row['descricao']}</td>
-                    <td>{$row['preco']}</td>
-                    <td>{$row['quantidade_estoque']}</td>
-                    <td>{$row['id_usuario']}</td>
-                    <td>
-                        <a class='btn' href='update.php?id={$row['id_produto']}'>Editar</a>
-                        <a class='btn' href='delete.php?id={$row['id_produto']}' onclick='return confirm(\"Tem certeza que deseja excluir este produto?\")'>Excluir</a>
-                    </td>
-                  </tr>";
-        }
-        echo "</tbody></table>";
-    } else {
-        echo "<p>Nenhum produto encontrado.</p>";
-    }
-    ?>
-    <a class="btn" href="../index.php">Voltar</a>
-</div>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+        </tr>
+        <?php while ($row = $result->fetch_assoc()): ?>
+        <tr>
+            <td><?= $row["id"] ?></td>
+            <td><?= htmlspecialchars($row["nome"]) ?></td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
 
+    <div style="margin-top: 20px;">
+        <?php if ($page > 1): ?>
+            <a href="?nome=<?= urlencode($nome) ?>&page=<?= $page - 1 ?>">Anterior</a>
+        <?php endif; ?>
+        Página <?= $page ?> de <?= $totalPages ?>
+        <?php if ($page < $totalPages): ?>
+            <a href="?nome=<?= urlencode($nome) ?>&page=<?= $page + 1 ?>">Próxima</a>
+        <?php endif; ?>
+    </div>
+
+    <br>
+    <a href="Create.php">Cadastrar novo time</a>
 </body>
 </html>
