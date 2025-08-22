@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db = "db.php";
+$db = "futebol_db";
 
 $conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) {
