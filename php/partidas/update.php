@@ -1,5 +1,5 @@
 <?php 
-include 'db.php'; 
+include '../db.php'; 
 
 $id = $_GET['id'];
 $sql = "SELECT * FROM partidas WHERE id=$id";

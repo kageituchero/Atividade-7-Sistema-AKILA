@@ -1,4 +1,4 @@
-<?php include 'db.php'; ?>
+<?php include '../db.php'; ?>
 
 <h2>Lista de Partidas</h2>
 <table border="1">

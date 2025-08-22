@@ -1,4 +1,4 @@
-<?php include 'db.php'; ?>
+<?php include '../db.php'; ?>
 <form method="POST">
     Time Mandante: <input type="number" name="time_mandante" required><br>
     Time Visitante: <input type="number" name="time_visitante" required><br>
