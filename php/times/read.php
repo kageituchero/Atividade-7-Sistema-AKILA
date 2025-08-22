@@ -9,13 +9,11 @@ if ($conn->connect_error) {
     die("Falha na conexão: " . $conn->connect_error);
 }
 
-// Parâmetros de filtro e paginação
 $nome = trim($_GET["nome"] ?? "");
 $page = max(1, intval($_GET["page"] ?? 1));
 $perPage = 5;
 $offset = ($page - 1) * $perPage;
 
-// Monta a query de busca com filtro
 $where = "";
 $params = [];
 $types = "";
@@ -26,7 +24,6 @@ if ($nome !== "") {
     $types .= "s";
 }
 
-// Conta total de registros para paginação
 $sqlCount = "SELECT COUNT(*) FROM times $where";
 $stmtCount = $conn->prepare($sqlCount);
 if ($where !== "") $stmtCount->bind_param($types, ...$params);
@@ -35,7 +32,6 @@ $stmtCount->bind_result($total);
 $stmtCount->fetch();
 $stmtCount->close();
 
-// Busca os registros da página atual
 $sql = "SELECT id, nome FROM times $where ORDER BY nome LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($sql);
 
