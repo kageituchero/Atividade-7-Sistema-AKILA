@@ -13,7 +13,6 @@ $id = intval($_GET["id"] ?? 0);
 $erro = "";
 $sucesso = "";
 
-// Buscar informações do time para confirmação
 $nome_time = "";
 if ($id > 0) {
     $stmt = $conn->prepare("SELECT nome FROM times WHERE id = ?");
@@ -29,7 +28,6 @@ if ($id > 0) {
     $erro = "ID inválido.";
 }
 
-// Verificar dependências antes de excluir
 $tem_dependencias = false;
 if (!$erro && $_SERVER["REQUEST_METHOD"] === "POST") {
     // Verifica jogadores vinculados
@@ -39,8 +37,7 @@ if (!$erro && $_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt->bind_result($qtd_jogadores);
     $stmt->fetch();
     $stmt->close();
-
-    // Verifica partidas vinculadas (mandante ou visitante)
+    
     $stmt = $conn->prepare("SELECT COUNT(*) FROM partidas WHERE mandante_id = ? OR visitante_id = ?");
     $stmt->bind_param("ii", $id, $id);
     $stmt->execute();
@@ -52,7 +49,7 @@ if (!$erro && $_SERVER["REQUEST_METHOD"] === "POST") {
         $tem_dependencias = true;
         $erro = "Não é possível excluir: o time possui jogadores ou partidas vinculados.";
     } else {
-        // Realiza a exclusão
+        
         $stmt = $conn->prepare("DELETE FROM times WHERE id = ?");
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
