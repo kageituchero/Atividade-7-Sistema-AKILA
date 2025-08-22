@@ -1,5 +1,5 @@
 <?php
-include '../php/db.php';
+include 'php/db.php';
 ?>
 <!DOCTYPE html>
 <html>
@@ -13,8 +13,8 @@ include '../php/db.php';
 <div class="container">
     <h1>⚽ Gerenciamento de Jogadores</h1>
     
-    <a class="btn" href="../php/jogadores/create.php">Cadastrar Jogador</a>
-    <a class="btn" href="read.php">Listar Jogadores</a>
+    <a class="btn" href="php/jogadores/create.php">Cadastrar Jogador</a>
+    <a class="btn" href="php/jogadores/read.php">Listar Jogadores</a>
     <a class="btn" href="../index.php">Voltar ao Início</a>
 </div>
 
