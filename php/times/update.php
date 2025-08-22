@@ -1,79 +1,80 @@
 <?php
-include 'db.php';
-$msg = "";
-$produto = null;
+// Conexão com o banco de dados
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db = "db.php";
 
-if (isset($_GET['id'])) {
-    $id = $_GET['id'];
-
-    $sql = "SELECT * FROM produtos WHERE id_produto=$id";
-    $result = $conn->query($sql);
-    if ($result->num_rows > 0) {
-        $produto = $result->fetch_assoc();
-    } else {
-        $msg = "Produto não encontrado.";
-    }
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+    die("Falha na conexão: " . $conn->connect_error);
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $id = $_POST['id'];
-    $nome = $_POST['nome'];
-    $descricao = $_POST['descricao'];
-    $preco = $_POST['preco'];
-    $quantidade = $_POST['quantidade'];
-    $id_usuario = $_POST['id_usuario'];
+$id = intval($_GET["id"] ?? 0);
+$erro = "";
+$sucesso = "";
 
-    $sql = "UPDATE produtos SET nome='$nome', descricao='$descricao', preco='$preco', quantidade_estoque='$quantidade', id_usuario='$id_usuario' WHERE id_produto=$id";
+// Buscar dados atuais do time
+$nome = "";
+if ($id > 0) {
+    $stmt = $conn->prepare("SELECT nome FROM times WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->bind_result($nome);
+    $stmt->fetch();
+    $stmt->close();
 
-    if ($conn->query($sql) === TRUE) {
-        $msg = "Produto atualizado com sucesso!";
-        $sql = "SELECT * FROM produtos WHERE id_produto=$id";
-        $result = $conn->query($sql);
-        $produto = $result->fetch_assoc();
+    if (!$nome) {
+        $erro = "Time não encontrado.";
+    }
+} else {
+    $erro = "ID inválido.";
+}
+
+// Atualizar dados ao receber POST
+if (!$erro && $_SERVER["REQUEST_METHOD"] === "POST") {
+    $novo_nome = trim($_POST["nome"] ?? "");
+
+    if (empty($novo_nome)) {
+        $erro = "O nome do time é obrigatório!";
     } else {
-        $msg = "Erro ao atualizar produto: " . $conn->error;
+        $stmt = $conn->prepare("UPDATE times SET nome = ? WHERE id = ?");
+        $stmt->bind_param("si", $novo_nome, $id);
+
+        if ($stmt->execute()) {
+            $sucesso = "Time atualizado com sucesso!";
+            $nome = $novo_nome;
+        } else {
+            $erro = "Erro ao atualizar o time.";
+        }
+        $stmt->close();
     }
 }
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Atualizar Produto</title>
-<link rel="stylesheet" type="text/css" href="../style/style.css">
+    <meta charset="UTF-8">
+    <title>Editar Time</title>
 </head>
 <body>
-
-<div class="container">
-    <h1>Atualizar Produto</h1>
-    <?php if($msg) echo "<p class='" . (strpos($msg, "Erro") !== false ? "error-message" : "message") . "'>$msg</p>"; ?>
-
-    <?php if ($produto): ?>
-    <form method="POST">
-        <input type="hidden" name="id" value="<?php echo $produto['id_produto']; ?>">
-        
-        <label for="nome">Nome:</label>
-        <input type="text" id="nome" name="nome" value="<?php echo $produto['nome']; ?>" required>
-        
-        <label for="descricao">Descrição:</label>
-        <textarea id="descricao" name="descricao" required><?php echo $produto['descricao']; ?></textarea>
-        
-        <label for="preco">Preço:</label>
-        <input type="number" step="0.01" id="preco" name="preco" value="<?php echo $produto['preco']; ?>" required>
-        
-        <label for="quantidade">Quantidade:</label>
-        <input type="number" id="quantidade" name="quantidade" value="<?php echo $produto['quantidade_estoque']; ?>" required>
-        
-        <label for="id_usuario">ID Usuário:</label>
-        <input type="number" id="id_usuario" name="id_usuario" value="<?php echo $produto['id_usuario']; ?>" required>
-        
-        <button type="submit">Salvar</button>
-    </form>
-    <?php else: ?>
-        <p>Produto não encontrado para atualização.</p>
+    <h1>Editar Time</h1>
+    <?php if ($erro): ?>
+        <p style="color:red"><?= $erro ?></p>
+    <?php elseif ($sucesso): ?>
+        <p style="color:green"><?= $sucesso ?></p>
     <?php endif; ?>
-    <a class="btn" href="../index.php">Voltar</a>
-</div>
 
+    <?php if (!$erro): ?>
+        <form method="post">
+            <label for="nome">Nome do Time:</label>
+            <input type="text" id="nome" name="nome" value="<?= htmlspecialchars($nome) ?>" required>
+            <button type="submit">Salvar</button>
+            <a href="read.php">Cancelar</a>
+        </form>
+    <?php else: ?>
+        <a href="read.php">Voltar à lista</a>
+    <?php endif; ?>
 </body>
 </html>
