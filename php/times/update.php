@@ -1,5 +1,4 @@
 <?php
-// Conexão com o banco de dados
 $host = "localhost";
 $user = "root";
 $pass = "";
@@ -14,7 +13,6 @@ $id = intval($_GET["id"] ?? 0);
 $erro = "";
 $sucesso = "";
 
-// Buscar dados atuais do time
 $nome = "";
 if ($id > 0) {
     $stmt = $conn->prepare("SELECT nome FROM times WHERE id = ?");
@@ -31,7 +29,6 @@ if ($id > 0) {
     $erro = "ID inválido.";
 }
 
-// Atualizar dados ao receber POST
 if (!$erro && $_SERVER["REQUEST_METHOD"] === "POST") {
     $novo_nome = trim($_POST["nome"] ?? "");
 
